@@ -1,0 +1,1261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redis Enterprise Cloud — A Beginner's Guide</title>
+<style>
+  :root{
+    --paper:#FBF8F5; --ink:#231F1C; --muted:#6B615A; --line:#E7DFD7;
+    --accent:#B7282E; --accent-soft:#F9E5E6;
+    --amber:#C97A0A; --amber-soft:#FCF1DE;
+    --blue:#2C5FBF; --blue-soft:#E8EFFC;
+    --green:#1E8E5A; --green-soft:#E4F5EC;
+    --red:#BE4040; --red-soft:#FBEAEA;
+    --purple:#6E48B0; --purple-soft:#F0EAFA;
+    --code:#F2ECE6;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--paper);color:var(--ink);font-family:Georgia,'Times New Roman',serif;line-height:1.7;font-size:17px}
+  .wrap{max-width:960px;margin:0 auto;padding:0 24px}
+
+  header{padding:60px 0 40px;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--amber);margin-bottom:12px}
+  h1{font-size:42px;font-weight:400;line-height:1.15}
+  h1 b{color:var(--accent);font-weight:700}
+  header p{margin-top:16px;color:var(--muted);max-width:640px}
+
+  section{padding:48px 0;border-bottom:1px solid var(--line)}
+  .kicker{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px}
+  h2{font-size:30px;font-weight:700;margin-bottom:18px}
+  h3{font-size:20px;font-weight:700;margin:28px 0 10px}
+  p{margin-bottom:12px}
+  b.q{font-family:var(--mono);font-size:13px;color:var(--accent);text-transform:uppercase;letter-spacing:.05em;display:block;margin-top:14px}
+  code{font-family:var(--mono);font-size:.85em;background:var(--code);padding:2px 6px;border-radius:4px}
+  pre{background:#241F1B;color:#F0EAE4;font-family:var(--mono);font-size:13.5px;line-height:1.6;padding:18px;border-radius:10px;overflow-x:auto;margin:14px 0}
+  pre .c{color:#93887E} pre .k{color:#F0A35E} pre .s{color:#A8D49B} pre .n{color:#8FBFF0}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+  @media(max-width:720px){.grid2{grid-template-columns:1fr}}
+  .card{border:1px solid var(--line);border-radius:12px;padding:18px;background:#fff}
+  .card h4{font-size:15px;font-family:var(--mono);margin-bottom:8px;color:var(--accent)}
+  .card p{font-size:15px;margin-bottom:6px}
+  .card.amber h4{color:var(--amber)} .card.blue h4{color:var(--blue)} .card.green h4{color:var(--green)} .card.red h4{color:var(--red)}
+
+  .note{background:var(--blue-soft);border-left:3px solid var(--blue);padding:12px 16px;border-radius:0 8px 8px 0;font-size:15.5px;margin-bottom:12px}
+  .note.warn{background:var(--amber-soft);border-left-color:var(--amber)}
+  .note.dyn{background:var(--green-soft);border-left-color:var(--green)}
+
+  table{width:100%;border-collapse:collapse;margin:16px 0;font-size:15px}
+  th{font-family:var(--mono);font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);text-align:left;padding:8px 12px;border-bottom:2px solid var(--ink)}
+  td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  td:first-child{font-family:var(--mono);font-size:13.5px}
+
+  .flow{display:flex;align-items:stretch;gap:0;margin:16px 0;flex-wrap:wrap}
+  .step{flex:1;min-width:140px;border:1px solid var(--line);background:#fff;padding:12px;font-size:14px}
+  .step:first-child{border-radius:10px 0 0 10px}
+  .step:last-child{border-radius:0 10px 10px 0}
+  .step .sn{font-family:var(--mono);font-size:11px;color:var(--amber);display:block;margin-bottom:4px}
+
+  footer{padding:40px 0;color:var(--muted);font-size:14px;font-family:var(--mono)}
+
+  /* ===== Tab switcher ===== */
+  .tabbar{position:sticky;top:0;z-index:60;background:var(--paper);border-bottom:1px solid var(--line);padding:16px 0}
+  .tabbar .wrap{display:flex;gap:14px;flex-wrap:wrap}
+  .tabbtn{flex:1;min-width:220px;display:flex;align-items:center;justify-content:center;gap:10px;
+    font-family:var(--mono);font-size:14px;padding:16px 20px;border-radius:12px;
+    border:2px solid var(--line);background:#fff;color:var(--muted);cursor:pointer;transition:all .18s}
+  .tabbtn .ic{font-size:18px}
+  .tabbtn .lbl{display:flex;flex-direction:column;align-items:flex-start;line-height:1.3}
+  .tabbtn .lbl small{font-family:Georgia,serif;font-size:11.5px;opacity:.75}
+  .tabbtn:hover{border-color:var(--accent);color:var(--accent)}
+  .tabbtn.active.concepts{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tabbtn.active.spring{background:linear-gradient(135deg,var(--amber),var(--purple));border-color:var(--purple);color:#fff}
+  .subnavbar{position:sticky;top:73px;z-index:55;background:rgba(251,248,245,.97);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding:10px 0}
+  .subnavbar .wrap{display:flex;gap:4px;overflow-x:auto}
+  .subnavbar a{font-family:var(--mono);font-size:12px;color:var(--muted);text-decoration:none;padding:6px 10px;border-radius:6px;white-space:nowrap}
+  .subnavbar a:hover{background:var(--accent-soft);color:var(--accent)}
+  .panel{display:none}
+  .panel.active{display:block}
+
+  /* ===== Feature blocks ===== */
+  .sb-banner{background:linear-gradient(135deg,var(--amber),var(--purple));color:#fff;border-radius:14px;padding:22px 26px;margin-bottom:24px}
+  .sb-banner .st{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;opacity:.85;margin-bottom:6px}
+  .sb-banner h2{color:#fff;margin-bottom:8px}
+  .sb-banner p{color:#FBF3E8;max-width:700px;margin-bottom:0}
+  .subnav{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 30px}
+  .subnav a{font-family:var(--mono);font-size:12.5px;color:var(--purple);background:var(--purple-soft);border:1px solid #DCCEF0;padding:7px 12px;border-radius:20px;text-decoration:none}
+  .subnav a:hover{background:var(--purple);color:#fff}
+  .feat{border:1px solid var(--line);background:#fff;border-radius:14px;padding:24px;margin:22px 0}
+  .feat > .fh{display:flex;align-items:center;gap:10px;margin-bottom:6px;flex-wrap:wrap}
+  .feat .fnum{font-family:var(--mono);font-size:12px;background:var(--purple);color:#fff;padding:3px 9px;border-radius:6px}
+  .feat h3{margin:0}
+  .storychip{display:inline-block;font-family:var(--mono);font-size:11px;background:var(--amber-soft);color:var(--amber);padding:4px 12px;border-radius:20px;margin-bottom:12px}
+  .problem{background:#FBEAEA;border-left:4px solid var(--red);padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0}
+  .problem .lbl,.solution .lbl,.behind .lbl,.walk .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:bold;margin-bottom:8px;display:block}
+  .problem .lbl{color:var(--red)}
+  .problem p:last-child{margin-bottom:0}
+  .solution{background:var(--blue-soft);border-left:4px solid var(--blue);padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0}
+  .solution .lbl{color:var(--blue)}
+  .solution p:last-child{margin-bottom:0}
+  .behind{border:1.5px dashed var(--purple);background:#FBFAFF;border-radius:10px;padding:16px 18px;margin:14px 0}
+  .behind .lbl{color:var(--purple)}
+  .behind p:last-child{margin-bottom:0}
+  .walk{background:var(--purple-soft);border-radius:10px;padding:16px 20px;margin:14px 0}
+  .walk .lbl{color:var(--purple)}
+  .walk ol{margin-left:20px}
+  .walk li{margin-bottom:9px;font-size:15px}
+  .walk li b{color:var(--purple)}
+  .perf{background:#FBEAEA;border-left:3px solid var(--red);padding:12px 16px;border-radius:0 8px 8px 0;font-size:15px;margin:10px 0}
+  .perf b{color:var(--red)}
+  .best{background:var(--green-soft);border-left:4px solid var(--green);padding:14px 18px;border-radius:0 10px 10px 0;margin:14px 0}
+  .best .lbl{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;font-weight:bold;margin-bottom:8px;display:block;color:var(--green)}
+  .best ul{margin-left:20px}
+  .best li{margin-bottom:6px;font-size:15px}
+</style>
+</head>
+<body>
+
+<div class="tabbar"><div class="wrap">
+  <button id="btnConcepts" class="tabbtn active concepts" onclick="showTab('concepts')">
+    <span class="ic">📕</span>
+    <span class="lbl">Redis Concepts<small>Basics + core features, simply explained</small></span>
+  </button>
+  <button id="btnSpring" class="tabbtn spring" onclick="showTab('spring')">
+    <span class="ic">☕</span>
+    <span class="lbl">Spring Boot Implementation<small>Connect + build every feature</small></span>
+  </button>
+</div></div>
+
+<header><div class="wrap">
+  <div class="eyebrow">Beginner friendly · Learn by real examples</div>
+  <h1><b>Redis Enterprise Cloud</b> — your first guide</h1>
+</div></header>
+
+<div id="panelConcepts" class="panel active">
+
+<div class="subnavbar"><div class="wrap">
+  <a href="#what">1 What is Redis</a><a href="#fast">2 Why so fast</a><a href="#millions">3 Millions of requests</a>
+  <a href="#internals">4 How it works inside</a><a href="#companies">5 Who uses it</a>
+  <a href="#f-cache">6 Cache</a><a href="#f-pubsub">7 Pub/Sub</a><a href="#f-search">8 Search</a>
+  <a href="#f-geo">9 Geospatial</a><a href="#f-structures">10 Data Structures</a>
+  <a href="#f-atomic">11 Atomic Counter</a>
+</div></div>
+
+<!-- ============ 1 WHAT ============ -->
+<section id="what"><div class="wrap">
+  <div class="kicker">Basics · Part 1</div>
+  <h2>What is Redis?</h2>
+  <p>Redis is a place to store data — like a database — but with one big difference: <b>it keeps everything in memory (RAM), not on a disk.</b></p>
+  <p>Why does that matter? Think of it like this. A disk is a big cupboard in another room: lots of space, but you have to walk there every time. Memory is the top of your own desk: small, but everything on it is within reach of your hand. Redis keeps your data on the desk.</p>
+  <p>Because of this, Redis can answer most questions in <b>less than one millisecond</b>. For comparison, a normal database usually takes 10–100 milliseconds. That difference — felt millions of times a day — is why almost every big app you use has Redis somewhere inside it.</p>
+  <div class="note dyn"><b>The one sentence to remember:</b> Redis = your data on the desk, not in the cupboard. Fast because it never walks to the other room.</div>
+</div></section>
+
+<!-- ============ 2 WHY FAST ============ -->
+<section id="fast"><div class="wrap">
+  <div class="kicker">Basics · Part 2</div>
+  <h2>Why is Redis so fast?</h2>
+  <p>Three simple reasons:</p>
+  <div class="grid2">
+    <div class="card"><h4>1 · Memory instead of disk</h4><p>Reading from memory is roughly 10,000× faster than reading from a disk. This one fact is most of the speed. Redis never waits for a disk to answer a question.</p></div>
+    <div class="card amber"><h4>2 · One very fast cashier</h4><p>Redis handles commands one at a time, like a single cashier at a counter. That sounds slow — but this cashier serves each customer in a microsecond, and because there is only one, nobody argues over the cash box. No locks, no fights, no waiting on each other.</p></div>
+    <div class="card blue"><h4>3 · Simple questions, direct answers</h4><p>Redis doesn't understand complicated queries and doesn't need to plan anything. You say "give me the value of this key" — it jumps straight to it. The commands map almost directly to memory operations.</p></div>
+  </div>
+</div></section>
+
+<!-- ============ 3 MILLIONS ============ -->
+<section id="millions"><div class="wrap">
+  <div class="kicker">Basics · Part 3</div>
+  <h2>Why can Redis handle millions of requests?</h2>
+  <p>Follow the math of the single cashier. If serving one customer takes 1 microsecond, one cashier can serve <b>up to a million customers per second</b> — not because the cashier multitasks, but because each customer takes almost no time at all.</p>
+  <p>Real numbers: one ordinary Redis server comfortably handles <b>100,000+ commands per second</b>. And when even that is not enough, Redis Enterprise Cloud can split your data across several servers (each with its own cashier) — 6 servers means roughly 6× the desk space and 6× the speed. Your code doesn't change; the splitting happens underneath.</p>
+  <div class="flow">
+    <div class="step"><span class="sn">1</span>Each command is tiny (microseconds)</div>
+    <div class="step"><span class="sn">2</span>So one server handles 100K+ per second</div>
+    <div class="step"><span class="sn">3</span>Need more? Add servers — the data splits across them</div>
+    <div class="step"><span class="sn">4</span>Millions of requests per second, no code changes</div>
+  </div>
+</div></section>
+
+<!-- ============ 4 INTERNALS ============ -->
+<section id="internals"><div class="wrap">
+  <div class="kicker">Basics · Part 4</div>
+  <h2>How does Redis work internally?</h2>
+  <p>Here is the whole architecture, in plain words. Picture a post office with one clerk:</p>
+  <div class="flow">
+    <div class="step"><span class="sn">1</span><b>Your app connects</b> — it opens one line to Redis and keeps it open (like keeping a phone call running instead of redialing).</div>
+    <div class="step"><span class="sn">2</span><b>Commands wait in one line</b> — every request from every app joins a single queue.</div>
+    <div class="step"><span class="sn">3</span><b>The clerk serves one at a time</b> — this is the famous "single thread." One at a time, but each takes a microsecond.</div>
+    <div class="step"><span class="sn">4</span><b>Data sits in labeled boxes</b> — memory is organized like shelves of labeled boxes: the label is the <b>key</b> ("user:42"), the content is the <b>value</b>.</div>
+  </div>
+  <p>Two more pieces complete the picture:</p>
+  <p><b>Saving to disk (so a restart doesn't lose everything):</b> Redis can take a photo of all its boxes every few minutes, and it can also keep a diary of every change. After a crash, it reloads the photo and replays the diary. In Redis Enterprise Cloud, this is a setting you switch on — no setup work.</p>
+  <p><b>Copies (so one dead machine doesn't stop you):</b> Redis can run a live copy on a second machine that mirrors everything within milliseconds. If the main machine dies, the copy takes over in seconds — automatically. In Redis Enterprise Cloud, this is a checkbox.</p>
+  <div class="note"><b>Simple example, start to finish:</b> your app asks <code>GET user:42</code>. The command travels down the open line, waits its (microsecond) turn in the queue, the clerk reads box "user:42" from the shelf, and the answer travels back. Total time: well under a millisecond.</div>
+</div></section>
+
+<!-- ============ 5 COMPANIES ============ -->
+<section id="companies"><div class="wrap">
+  <div class="kicker">Basics · Part 5</div>
+  <h2>Why do big companies use Redis?</h2>
+  <p>Because every one of them has the same two problems: <b>the same data being asked for millions of times</b>, and <b>users who expect everything instantly</b>. Here is where Redis sits inside apps you use every day:</p>
+  <table>
+    <tr><th>Company</th><th>Where Redis helps</th><th>In simple words</th></tr>
+    <tr><td>Instagram</td><td>Profiles &amp; feeds</td><td>A celebrity's profile is viewed millions of times a day. Redis keeps a copy in memory, so the database answers once, not a million times.</td></tr>
+    <tr><td>YouTube-style apps</td><td>View counters</td><td>A viral video gets thousands of views per second. Counting in memory (+1, +1, +1...) is safe and instant; the total is saved to the database calmly, later.</td></tr>
+    <tr><td>Amazon-style shops</td><td>Shopping carts &amp; sessions</td><td>Your cart follows you from your phone to your laptop because it lives in a shared, fast place — not inside one web server's memory.</td></tr>
+    <tr><td>Facebook</td><td>"Who are your friends?" cache</td><td>Your friend list is needed on almost every page. Asking the big database each time would melt it. Redis remembers the answer.</td></tr>
+    <tr><td>Payment apps</td><td>OTPs &amp; safety limits</td><td>Your 5-minute OTP code lives in Redis with a self-destruct timer. And "maximum 5 PIN attempts per minute" is a Redis counter protecting your money.</td></tr>
+    <tr><td>Stock trading apps</td><td>Live prices &amp; top gainers</td><td>Prices change every millisecond and every user watches them. Redis holds the latest price in memory and keeps "top gainers" always sorted, ready to show.</td></tr>
+  </table>
+  <div class="note dyn"><b>The pattern to notice:</b> in every single row, Redis is NOT replacing the main database. It sits in front of it (fast copies), or beside it (counters, timers, live data). The database stays the book of record; Redis is the fast memory of the app.</div>
+</div></section>
+
+<!-- ============ 6 CACHE ============ -->
+<section id="f-cache"><div class="wrap">
+  <div class="kicker">Feature 1</div>
+  <h2>Redis as a Cache</h2>
+
+  <div class="problem">
+    <span class="lbl">1 · The real problem — Instagram</span>
+    <p>A cricket star with 50 million followers posts a photo. In the next hour, 2 million people open his profile. His profile data (name, photo, bio, follower count) is EXACTLY the same for all 2 million viewers — yet without a cache, the main database runs the same lookup 2 million times. Pages get slow, and the database struggles under pointless repeated work.</p>
+  </div>
+
+  <div class="solution">
+    <span class="lbl">2 · How Redis solves it</span>
+    <p>Imagine you visit the same website every day. Instead of asking the database for the same information every time, Redis keeps a copy in memory. Memory is much faster than a database, so the page appears almost instantly — and the database only works when something actually changes.</p>
+    <p>The recipe is called <b>cache-aside</b>, and it is three steps: (1) check Redis first; (2) if the copy is there, return it — done in under a millisecond; (3) if not, ask the database once, save the answer in Redis with an expiry time, and return it. The next 1,999,999 viewers hit step 2.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">3 · What Redis is doing behind the scenes</span>
+    <p>Redis stores the profile as one labeled box: key <code>user:virat</code>, value = the profile as JSON text. The expiry time (called a <b>TTL</b> — "time to live") is a countdown attached to the box: when it reaches zero, Redis throws the box away by itself. This keeps copies fresh and memory clean, with zero cleanup code.</p>
+<pre>SET user:virat '{"name":"Virat","followers":50000000,...}' EX 600   <span class="c"># keep a copy for 10 minutes</span>
+GET user:virat                                                       <span class="c"># 2 million fast reads</span>
+DEL user:virat                                                       <span class="c"># profile edited? delete the copy — next read is fresh</span></pre>
+  </div>
+
+  <p><b>4 · Spring Boot implementation:</b> in the Spring Boot tab, this whole feature becomes two annotations — <code>@Cacheable</code> (check Redis first, fill it on a miss) and <code>@CacheEvict</code> (delete the copy when the profile changes).</p>
+
+  <div class="best">
+    <span class="lbl">5 · Best practices</span>
+    <ul>
+      <li>Always set an expiry (TTL). A copy without an expiry becomes stale forever and leaks memory.</li>
+      <li>When the original changes, DELETE the copy (don't try to update it) — the next read refills it correctly.</li>
+      <li>Cache data that is read often and changes rarely: profiles, product pages, settings.</li>
+      <li>Never let Redis be the only home of important data — the database stays the source of truth.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ============ 7 PUBSUB ============ -->
+<section id="f-pubsub"><div class="wrap">
+  <div class="kicker">Feature 2</div>
+  <h2>Redis Pub/Sub</h2>
+
+  <div class="problem">
+    <span class="lbl">1 · The real problem — a payment app</span>
+    <p>Your friend sends you ₹500 on a payment app. You are staring at the app — and you expect the "₹500 received!" message to pop up <b>immediately</b>, not whenever the app next checks the server. The naive fix — the app asking "anything new?" every few seconds — is late by design, drains your battery, and floods the servers with millions of empty "anything new?" calls.</p>
+  </div>
+
+  <div class="solution">
+    <span class="lbl">2 · How Redis solves it</span>
+    <p>Pub/Sub turns the direction around: instead of your app repeatedly ASKING, the server TELLS your app the moment something happens. Your app <b>subscribes</b> to a channel with your name on it (like tuning a radio to your personal station). When money arrives, the payment server <b>publishes</b> one small message to that channel — and your app hears it within milliseconds. The popup appears while your friend is still holding their phone.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">3 · What Redis is doing behind the scenes</span>
+    <p>Redis keeps a simple list of "who is currently listening to which channel." When a message is published, Redis instantly forwards it to every current listener — and then forgets it. Pub/Sub is <b>live radio</b>: nothing is recorded. If your phone was off, that particular shout is gone (which is fine — the transaction itself is safely in the database; only the live popup was missed).</p>
+<pre>SUBSCRIBE payments:user:ramesh                       <span class="c"># the app listens on its channel</span>
+PUBLISH payments:user:ramesh '{"received":500,"from":"suresh"}'   <span class="c"># server shouts — all listeners hear it instantly</span></pre>
+  </div>
+
+  <p><b>4 · Spring Boot implementation:</b> in the Spring Boot tab — a publisher service (one line: <code>convertAndSend</code>) and a listener container that receives messages and pushes them to the user's phone.</p>
+
+  <div class="best">
+    <span class="lbl">5 · Best practices</span>
+    <ul>
+      <li>Use Pub/Sub for "right now" moments: popups, live counters, "user is typing…".</li>
+      <li>Never use it as the ONLY record of something important — it forgets. Store the fact in a database first, shout second.</li>
+      <li>One channel per user (<code>payments:user:ramesh</code>) keeps routing simple.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ============ 8 SEARCH ============ -->
+<section id="f-search"><div class="wrap">
+  <div class="kicker">Feature 3</div>
+  <h2>Redis Search</h2>
+
+  <div class="problem">
+    <span class="lbl">1 · The real problem — Amazon</span>
+    <p>You type "iph" into the Amazon search box — and before you finish the word, "iPhone 15", "iPhone charger", "iPhone case" appear as suggestions. That means the search runs on <b>every keystroke</b>, for millions of shoppers at once, and each answer must come back in a few milliseconds. Running text-matching queries on the main product database for every keystroke would crush it — and the suggestions would lag behind your typing.</p>
+  </div>
+
+  <div class="solution">
+    <span class="lbl">2 · How Redis solves it</span>
+    <p>Redis Enterprise Cloud includes a real <b>search engine</b>. You tell it once: "index my products — the name is searchable text, the price is a number, the category is a label." From then on, every product you store is automatically searchable. Typing "iph" becomes one command that answers from memory in ~2 milliseconds — fast enough to search on literally every keystroke, sorted so bestsellers come first.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">3 · What Redis is doing behind the scenes</span>
+    <p>When you save a product, Redis quietly updates an <b>index</b> — think of the index at the back of a textbook: instead of reading the whole book to find "iPhone", you look up "iPhone" in the index and jump straight to the right pages. Redis maintains that back-of-the-book index automatically for every product, in memory. Searching never scans your data; it jumps.</p>
+<pre>FT.CREATE idx:products ON HASH PREFIX 1 "product:" SCHEMA
+    name TEXT SORTABLE  price NUMERIC SORTABLE  category TAG      <span class="c"># define the index ONCE</span>
+
+FT.SEARCH idx:products "iph*" SORTBY sales DESC LIMIT 0 5          <span class="c"># every keystroke — ~2ms</span>
+FT.SEARCH idx:products "@category:{mobiles} @price:[10000 30000]"  <span class="c"># filters work too</span></pre>
+  </div>
+
+  <p><b>4 · Spring Boot implementation:</b> in the Spring Boot tab — creating the index at startup and a <code>/search</code> REST endpoint that calls <code>FT.SEARCH</code> with what the user typed.</p>
+
+  <div class="best">
+    <span class="lbl">5 · Best practices</span>
+    <ul>
+      <li>The search index is a fast COPY — the main database stays the source of truth. You can always rebuild the index.</li>
+      <li>On the app side, wait ~150ms of typing pause before searching (called debouncing) — fewer, better queries.</li>
+      <li>Sort results by something users care about (sales, popularity) — not just text match.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ============ 9 GEO ============ -->
+<section id="f-geo"><div class="wrap">
+  <div class="kicker">Feature 4</div>
+  <h2>Redis Geospatial</h2>
+
+  <div class="problem">
+    <span class="lbl">1 · The real problem — Amazon delivery</span>
+    <p>You order a package, and the app shows: "Your delivery partner is 1.2 km away." Behind that little line is a hard question: out of thousands of moving delivery partners in your city, <b>which ones are near this exact address, right now?</b> Calculating your distance to every single partner, one by one, for every customer who opens the tracking screen, is far too slow — and partner locations change every few seconds.</p>
+  </div>
+
+  <div class="solution">
+    <span class="lbl">2 · How Redis solves it</span>
+    <p>Redis has location built in. Each delivery partner's app sends its position every few seconds, and Redis stores it (updating in place — no delete-and-re-add). Then "who is within 3 km of this address?" is <b>one command</b> that answers in about a millisecond, already sorted nearest-first, with distances included. The tracking screen just asks and displays.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">3 · What Redis is doing behind the scenes</span>
+    <p>Redis converts each latitude+longitude into one clever number, built so that <b>places near each other get numbers near each other</b>. All partners then live in one sorted collection ordered by that number. "Near me" stops being "measure everyone's distance" and becomes "look at my number's neighbors" — a tiny, fast lookup instead of a city-wide calculation.</p>
+<pre>GEOADD partners:pune 73.8567 18.5204 "partner:raju"     <span class="c"># update position (overwrite in place)</span>
+GEOADD partners:pune 73.8601 18.5310 "partner:salim"
+
+GEOSEARCH partners:pune FROMLONLAT 73.8560 18.5195
+          BYRADIUS 3 km ASC WITHDIST                     <span class="c"># nearest partners within 3 km, sorted</span></pre>
+  </div>
+
+  <p><b>4 · Spring Boot implementation:</b> in the Spring Boot tab — a location-update endpoint (PUT) and a "partners near me" endpoint (GET) built on Spring's geo operations.</p>
+
+  <div class="best">
+    <span class="lbl">5 · Best practices</span>
+    <ul>
+      <li>Location is personal data — store it only when needed, and remove entries that stop updating (a partner who went offline).</li>
+      <li>Keep one geo key per city or zone (<code>partners:pune</code>) — searches stay small and fast.</li>
+      <li>Update positions by simply calling GEOADD again — it overwrites in place.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ============ 10 DATA STRUCTURES ============ -->
+<section id="f-structures"><div class="wrap">
+  <div class="kicker">Feature 5</div>
+  <h2>Redis Data Structures</h2>
+  <p>Redis is not just "key → text." A key can hold a <b>shape</b> of data, and each shape has its own smart commands. Picking the right shape is the real skill. Here are the five that matter — each introduced by the app that needs it:</p>
+
+  <h3>String — one box, one value <span style="font-weight:normal;color:var(--muted)">(YouTube)</span></h3>
+  <div class="problem"><span class="lbl">1 · The problem</span><p>A video goes viral: 8,000 views per second. Doing "read the count, add 1, write it back" from many servers at once loses counts — two servers read "1000" at the same moment, both write "1001", and one view vanishes.</p></div>
+  <div class="solution"><span class="lbl">2 · How Redis solves it</span><p>The <code>INCR</code> command adds 1 <b>atomically</b> — meaning the read-add-write happens as one unbreakable step inside Redis. 8,000 INCRs per second from 20 servers, and not one view is lost. (A String can also hold text or JSON — it's the same shape the cache in Feature 1 uses.)</p></div>
+  <div class="behind"><span class="lbl">3 · Behind the scenes</span><p>Remember the single cashier: commands run one at a time, so two INCRs can never overlap. Atomic safety isn't extra machinery — it falls out of the architecture.</p>
+<pre>INCR video:abc123:views        <span class="c"># +1, safe under any traffic — returns the new count</span>
+GET  video:abc123:views</pre></div>
+
+  <h3>Hash — one object, many fields <span style="font-weight:normal;color:var(--muted)">(payment app)</span></h3>
+  <div class="problem"><span class="lbl">1 · The problem</span><p>A user's wallet has a balance, a currency, a status, and a last-updated time. Stored as one JSON text, changing JUST the balance means reading the whole thing, editing it, writing the whole thing back — wasteful and racy.</p></div>
+  <div class="solution"><span class="lbl">2 · How Redis solves it</span><p>A Hash is a box with labeled compartments — one key, many field→value pairs. You can read or update ONE compartment without touching the rest, and <code>HINCRBY</code> changes a number field atomically.</p></div>
+  <div class="behind"><span class="lbl">3 · Behind the scenes</span><p>Redis stores the fields in a small map inside the value. Field operations jump straight to the one compartment — no read-modify-write of the whole object.</p>
+<pre>HSET wallet:ramesh balance 2500 currency INR status ACTIVE
+HINCRBY wallet:ramesh balance -500        <span class="c"># sent ₹500 — ONE field changed, atomically</span>
+HGET wallet:ramesh balance</pre></div>
+
+  <h3>List — an ordered line <span style="font-weight:normal;color:var(--muted)">(Facebook)</span></h3>
+  <div class="problem"><span class="lbl">1 · The problem</span><p>Your Facebook notifications: newest on top, load 20 at a time, scroll for more. Rebuilding that ordered list from the database on every open is repeated, pointless work.</p></div>
+  <div class="solution"><span class="lbl">2 · How Redis solves it</span><p>A List is an ordered row of items you push onto and read in pages. New notification → push to the front. Open the screen → read items 0–19. Scroll → read 20–39. Trim the tail so it never grows forever.</p></div>
+  <div class="behind"><span class="lbl">3 · Behind the scenes</span><p>The list lives in memory as a chain — pushing to the front and reading a range from the front are both instant, no matter how long the history.</p>
+<pre>LPUSH notifications:ramesh '{"type":"comment","from":"suresh"}'   <span class="c"># newest at the front</span>
+LRANGE notifications:ramesh 0 19                                   <span class="c"># first page</span>
+LTRIM notifications:ramesh 0 499                                   <span class="c"># keep only the newest 500</span></pre></div>
+
+  <h3>Set — a bag of unique items <span style="font-weight:normal;color:var(--muted)">(Instagram)</span></h3>
+  <div class="problem"><span class="lbl">1 · The problem</span><p>Users double-tap to like — and sometimes double-tap twice, fast, on a laggy network. Counted naively, one person becomes two likes. And the app must know instantly whether to show YOUR heart as red on each post.</p></div>
+  <div class="solution"><span class="lbl">2 · How Redis solves it</span><p>A Set holds unique items — adding the same item twice does nothing, by definition. Add the user to the post's likers set: the command itself answers "1 = new like" or "0 = already liked." The like count is just the set's size; "is my heart red?" is one membership check.</p></div>
+  <div class="behind"><span class="lbl">3 · Behind the scenes</span><p>The duplicate check and the write are ONE atomic step — there is no gap where a second tap can sneak in. That's why the double-count bug is impossible here, not just unlikely.</p>
+<pre>SADD post:9001:likers ramesh        <span class="c"># returns 1 (new like) — second tap returns 0</span>
+SCARD post:9001:likers               <span class="c"># like count</span>
+SISMEMBER post:9001:likers priya     <span class="c"># should Priya's heart be red? 1/0</span></pre></div>
+
+  <h3>Sorted Set — unique items with scores, always in order <span style="font-weight:normal;color:var(--muted)">(stock trading)</span></h3>
+  <div class="problem"><span class="lbl">1 · The problem</span><p>A trading app's "Top Gainers" screen: stocks ranked by today's % change, updating every second as prices move. Re-sorting thousands of stocks in the database every second, for every user watching, is hopeless.</p></div>
+  <div class="solution"><span class="lbl">2 · How Redis solves it</span><p>A Sorted Set stores each member with a number (its score) and <b>keeps everything sorted at all times</b>. Update a stock's score and it slides to its new position instantly. "Top 10 gainers" is a read of the first 10 — never a sort. A stock's exact rank is a single lookup.</p></div>
+  <div class="behind"><span class="lbl">3 · Behind the scenes</span><p>Redis keeps the members in a structure that maintains order as things change (like a self-organizing bookshelf). Sorting is never "done" — it is simply always true.</p>
+<pre>ZADD gainers 4.2 "TCS"  2.8 "INFY"  -1.3 "WIPRO"    <span class="c"># score = today's % change</span>
+ZADD gainers 5.1 "TCS"                                <span class="c"># TCS jumps — position updates itself</span>
+ZREVRANGE gainers 0 9 WITHSCORES                      <span class="c"># top 10 gainers, right now</span>
+ZREVRANK gainers "INFY"                               <span class="c"># INFY's exact rank</span></pre></div>
+
+  <table>
+    <tr><th>Shape</th><th>Memory hook</th><th>Example above</th></tr>
+    <tr><td>String</td><td>One value; numbers count atomically</td><td>YouTube view counter</td></tr>
+    <tr><td>Hash</td><td>One object, labeled compartments</td><td>Payment wallet</td></tr>
+    <tr><td>List</td><td>Ordered line; push front, read pages</td><td>Facebook notifications</td></tr>
+    <tr><td>Set</td><td>Unique items; duplicates impossible</td><td>Instagram likes</td></tr>
+    <tr><td>Sorted Set</td><td>Scored items, always sorted</td><td>Stock top gainers</td></tr>
+  </table>
+
+  <div class="best">
+    <span class="lbl">5 · Best practices (for all five)</span>
+    <ul>
+      <li>Pick the shape that matches the question, not the data: "how many unique…?" = Set; "top N by…?" = Sorted Set; "newest first, in pages" = List.</li>
+      <li>Name keys like folders: <code>post:9001:likers</code> — type, ID, purpose.</li>
+      <li>Cap growing collections (LTRIM lists; expire old sorted sets) — no key should grow forever.</li>
+    </ul>
+  </div>
+</div></section>
+
+<!-- ============ 11 ATOMIC COUNTER ============ -->
+<section id="f-atomic"><div class="wrap">
+  <div class="kicker">Feature 6 · The most important pattern in this guide</div>
+  <h2>INCR — Atomic Counters, and how Redis stays safe under a storm</h2>
+  <p>This one deserves its own section, because it hides a bug that every backend engineer meets sooner or later — and Redis is one of the cleanest ways to make the bug impossible.</p>
+
+  <div class="problem">
+    <span class="lbl">1 · The real problem — a flash sale on Flipkart</span>
+    <p>Flipkart puts up a flash sale: <b>only 100 phones at ₹9,999</b>. At 12:00:00 sharp, <b>50,000 people</b> tap "Buy" in the same second. The rule is simple: sell exactly 100, then stop. Sell 101, and the company owes an angry customer a phone it doesn't have. Sell 99, and the marketing team is furious.</p>
+    <p>This sounds easy — just count down from 100. It is not easy. Let's see why.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">2 · Why simple counting breaks — the race condition</span>
+    <p><b>Single-threaded world (safe, but only in theory):</b> if only ONE process, ONE thread, ONE server ever touches the counter, then "read stock, subtract 1, write stock" is safe — nobody else is looking at it during those three steps.</p>
+    <p><b>Multi-threaded / multi-server world (what real backends actually are):</b> Flipkart runs its checkout on 50 servers behind a load balancer, and each server handles many requests at once. Now two servers can read the SAME value at the SAME moment. Watch:</p>
+    <table>
+      <tr><th>Time</th><th>Server A (Ramesh)</th><th>Server B (Suresh)</th><th>Stock in DB</th></tr>
+      <tr><td>12:00:00.001</td><td>reads stock → sees 100</td><td>—</td><td>100</td></tr>
+      <tr><td>12:00:00.002</td><td>—</td><td>reads stock → sees <b>100</b> too!</td><td>100</td></tr>
+      <tr><td>12:00:00.003</td><td>writes stock = 99, sells to Ramesh</td><td>—</td><td>99</td></tr>
+      <tr><td>12:00:00.004</td><td>—</td><td>writes stock = 99, sells to Suresh</td><td><b>99 ❌</b></td></tr>
+    </table>
+    <p><b>Two phones were sold, but the counter only dropped by one.</b> Do this 50,000 times per second and Flipkart sells 130 phones out of 100 — and finds out only when the warehouse ships. This is called a <b>race condition</b>: two threads racing each other, both reading old data because the read and the write are separate steps.</p>
+  </div>
+
+  <div class="solution">
+    <span class="lbl">3 · How Redis solves it — INCR / DECR is ONE step</span>
+    <p>Remember the single cashier from Section 4? Every Redis command is served one at a time. So when you say <code>DECR stock:flashsale</code>, Redis does "read the number, subtract 1, write it back" as ONE unbreakable step — no other command can slip in between. The race condition is not "unlikely" here. It is <b>impossible by design</b>.</p>
+    <p>Even better: <code>DECR</code> returns the NEW value. So the checkout code becomes: "call DECR, look at the number I got back — if it's ≥ 0 the sale succeeds, if it's < 0 the sale fails (sold out) and I add 1 back." No reads, no gaps, no double sells.</p>
+<pre>SET stock:flashsale 100                    <span class="c"># start of the sale</span>
+DECR stock:flashsale                        <span class="c"># customer 1 → returns 99  ✓ sell</span>
+DECR stock:flashsale                        <span class="c"># customer 2 → returns 98  ✓ sell</span>
+<span class="c"># ... 98 more customers ...</span>
+DECR stock:flashsale                        <span class="c"># customer 100 → returns 0   ✓ sell (last one)</span>
+DECR stock:flashsale                        <span class="c"># customer 101 → returns -1  ✗ sold out — refund the decrement</span>
+INCR stock:flashsale                        <span class="c">#            → back to 0, ready to reject the rest</span></pre>
+    <p>50,000 clicks per second, 50 servers, one Redis counter — and exactly 100 phones are sold. Every time.</p>
+  </div>
+
+  <div class="behind">
+    <span class="lbl">4 · So — where does this pattern appear in real apps?</span>
+    <p>Once you see it, you see it everywhere:</p>
+    <table>
+      <tr><th>Where</th><th>What's being counted atomically</th></tr>
+      <tr><td>Flash sale / limited stock</td><td>Units remaining — <code>DECR</code> until it hits 0</td></tr>
+      <tr><td>YouTube video views</td><td><code>INCR</code> the view counter — thousands per second, none lost</td></tr>
+      <tr><td>Instagram likes count</td><td><code>INCR</code> when a viral post gets liked 800×/second</td></tr>
+      <tr><td>Ticket booking (BookMyShow)</td><td><code>DECR</code> seats-available for a movie showing</td></tr>
+      <tr><td>Payment app rate limits</td><td><code>INCR</code> attempts; block after 5/minute</td></tr>
+      <tr><td>API quotas</td><td><code>INCR</code> a per-user counter; reject past the daily limit</td></tr>
+      <tr><td>Payment idempotency counter</td><td>Ensure the same request isn't processed twice</td></tr>
+    </table>
+    <p>Every one of these is the same shape: many servers, one shared number that must move up or down safely. Redis's atomic commands (<code>INCR</code>, <code>DECR</code>, <code>INCRBY</code>, <code>DECRBY</code>, and their hash cousins <code>HINCRBY</code>, sorted-set cousins <code>ZINCRBY</code>) are the tool.</p>
+  </div>
+
+  <p><b>5 · Spring Boot implementation:</b> in the Spring Boot tab, chapter 7 builds exactly this flash-sale feature — with the safe check-and-refund flow.</p>
+
+  <div class="best">
+    <span class="lbl">Best practices</span>
+    <ul>
+      <li><b>Never</b> do "read the counter in Java, then write it back" for shared numbers. That's the race condition. Use INCR / DECR — one command, atomic.</li>
+      <li>When over-decrementing is possible (stock, quotas), check the return value and INCR back if the sale fails. One extra command is nothing.</li>
+      <li>Java's <code>AtomicInteger</code> is only safe inside ONE server. Across many servers, only a shared atomic counter (Redis) works.</li>
+      <li>Give counters that represent temporary events (flash sales, rate-limit windows) a TTL so they clean themselves up.</li>
+    </ul>
+  </div>
+</div></section>
+
+</div> <!-- /panelConcepts -->
+
+<div id="panelSpringboot" class="panel">
+
+<!-- ================================================================ -->
+<!-- ============ SPRING BOOT IMPLEMENTATION ========== -->
+<!-- ================================================================ -->
+<section id="springboot"><div class="wrap">
+
+  <div class="sb-banner">
+    <div class="st">Hands-on · Spring Boot 4 · Java 25 · Redis Enterprise Cloud</div>
+    <h2>Spring Boot Implementation</h2>
+    <p>We will connect Spring Boot 4 (running on Java 25) to Redis Enterprise Cloud once, then build each feature from the first tab: cache, pub/sub, search, geospatial, all five data structures, and the atomic counter. Every chapter has the story before the code, so you can read the situation first and then see how Redis solves it in a few lines.</p>
+  </div>
+
+  <div class="subnav">
+    <a href="#sb-connect">1 Connect</a>
+    <a href="#sb-cache">2 Cache</a>
+    <a href="#sb-pubsub">3 Pub/Sub</a>
+    <a href="#sb-search">4 Search</a>
+    <a href="#sb-geo">5 Geospatial</a>
+    <a href="#sb-structures">6 Data Structures</a>
+    <a href="#sb-atomic">7 Atomic Counter ★</a>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 1 CONNECT -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-connect">
+    <div class="fh"><span class="fnum">1</span><h3>Connect Spring Boot to Redis Enterprise Cloud</h3></div>
+    <div class="storychip">📖 Do this once — every feature below uses it</div>
+
+    <p>When you create a database in Redis Enterprise Cloud, the console shows you three things: a <b>host</b> (a long address ending in <code>redis-cloud.com</code>), a <b>port</b> (a number), and a <b>password</b>. That's all we need.</p>
+
+    <div class="solution">
+      <span class="lbl">The steps</span>
+      <ol>
+        <li><b>Add one dependency</b> — it brings the Redis driver and all of Spring's Redis helpers.</li>
+        <li><b>Put host, port, and password in <code>application.yml</code></b> — the password comes from an environment variable so it never enters your code or Git.</li>
+        <li><b>Create one <code>RedisTemplate</code> bean</b> — the object your services use to talk to Redis. Built once, reused everywhere.</li>
+      </ol>
+    </div>
+
+<pre><span class="c">// pom.xml — Spring Boot 4 on Java 25</span>
+&lt;properties&gt;
+    &lt;java.version&gt;25&lt;/java.version&gt;
+    &lt;spring-boot.version&gt;4.0.0&lt;/spring-boot.version&gt;
+&lt;/properties&gt;
+
+&lt;dependency&gt;
+    &lt;groupId&gt;org.springframework.boot&lt;/groupId&gt;
+    &lt;artifactId&gt;spring-boot-starter-data-redis&lt;/artifactId&gt;
+&lt;/dependency&gt;</pre>
+
+<pre><span class="c"># application.yml — values from the Redis Enterprise Cloud console</span>
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}            <span class="c"># e.g. redis-12345.c256.ap-south-1.ec2.redns.redis-cloud.com</span>
+      port: ${REDIS_PORT:12345}
+      password: ${REDIS_PASSWORD}     <span class="c"># set on the server as an environment variable — NEVER in code</span>
+      ssl:
+        enabled: true                 <span class="c"># the connection is encrypted</span>
+      timeout: 2s                     <span class="c"># if Redis doesn't answer in 2s, fail loudly instead of hanging</span></pre>
+
+<pre><span class="c">// RedisConfig.java — one shared template for the whole app</span>
+@Configuration
+public class RedisConfig {
+
+    @Bean
+    public RedisTemplate&lt;String, Object&gt; redisTemplate(RedisConnectionFactory factory) {
+        RedisTemplate&lt;String, Object&gt; template = new RedisTemplate&lt;&gt;();
+        template.setConnectionFactory(factory);
+        template.setKeySerializer(new StringRedisSerializer());                 <span class="c">// keys stay human-readable</span>
+        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());   <span class="c">// Java objects ↔ JSON</span>
+        template.setHashKeySerializer(new StringRedisSerializer());
+        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        return template;
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath</span>
+      <ol>
+        <li>Spring reads the yml, opens a small pool of connections to your cloud database, and <b>keeps them open</b> — like keeping a phone line running instead of redialing for every sentence. Every command reuses these lines.</li>
+        <li>The serializers decide how Java objects become bytes. With these settings, keys look like <code>user:virat</code> and values look like readable JSON in any Redis browser — which makes debugging painless.</li>
+        <li>Test it: run the app, then in the Redis Cloud console's built-in CLI type <code>PING</code> — it answers <code>PONG</code>. You are connected.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>The password lives ONLY in environment variables. If it ever lands in Git, rotate it immediately — bots scan public repositories for exactly this.</li>
+        <li>Keep the 2s timeout — a hanging cache must fail fast, not slow your whole app quietly.</li>
+        <li>One template bean for the whole app. Never create connections per request.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 2 CACHE -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-cache">
+    <div class="fh"><span class="fnum">2</span><h3>Redis as Cache — the Instagram profile</h3></div>
+    <div class="storychip">📖 Feature 1 from the concepts tab</div>
+
+    <div class="problem">
+      <span class="lbl">1 · The problem</span>
+      <p>The cricket star posts; 2 million people open his profile in an hour. Without a cache, our database runs the same profile lookup 2 million times — same question, same answer, full price every time. Profile pages take ~100ms and the database burns CPU on pure repetition.</p>
+    </div>
+
+    <div class="solution">
+      <span class="lbl">2 · How Redis solves it</span>
+      <p>Keep a copy of the profile in Redis for 10 minutes. The first viewer pays the database price once; the next 1,999,999 viewers get the memory copy in under a millisecond. When the star edits his bio, we delete the copy — the very next viewer refills it fresh. In Spring Boot, this entire logic is <b>two annotations</b>.</p>
+    </div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind the code</span>
+      <p><b>CacheConfig</b> is the "rulebook" — we tell Spring: "any time someone asks you to cache something, use Redis, keep it for 10 minutes, and store it as JSON." Written once, obeyed everywhere.</p>
+      <p><b>UserService</b> is the story: <code>@Cacheable</code> tells Spring "check the fridge (Redis) before you cook (database). If the dish is there, serve it. If not, cook it, put a copy in the fridge on your way out." <code>@CacheEvict</code> is "the recipe changed — throw out the old dish so the next order gets the new one." That's it. No cache code in your business logic at all.</p>
+    </div>
+
+<pre><span class="c">// CacheConfig.java — turn caching on, point it at Redis, set a 10-minute expiry</span>
+@Configuration
+@EnableCaching
+public class CacheConfig {
+
+    @Bean
+    public RedisCacheManager cacheManager(RedisConnectionFactory factory) {
+        RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofMinutes(10))
+            .serializeValuesWith(SerializationPair.fromSerializer(
+                new GenericJackson2JsonRedisSerializer()));
+        return RedisCacheManager.builder(factory).cacheDefaults(config).build();
+    }
+}</pre>
+
+<pre><span class="c">// UserService.java — the two annotations ARE the feature</span>
+@Service
+public class UserService {
+    private final UserRepository userRepository;   <span class="c">// the main database</span>
+
+    @Cacheable(value = <span class="s">"users"</span>, key = <span class="s">"#handle"</span>)     <span class="c">// check Redis first; fill it on a miss</span>
+    public UserProfile getProfile(String handle) {
+        return userRepository.findByHandle(handle)     <span class="c">// runs ONLY when Redis doesn't have it</span>
+            .orElseThrow(() -&gt; new UserNotFoundException(handle));
+    }
+
+    @CacheEvict(value = <span class="s">"users"</span>, key = <span class="s">"#handle"</span>)   <span class="c">// profile changed → delete the copy</span>
+    public UserProfile updateBio(String handle, String newBio) {
+        return userRepository.updateBio(handle, newBio);
+    }
+}</pre>
+
+<pre><span class="c">// UserController.java — the REST API</span>
+@RestController
+@RequestMapping(<span class="s">"/api/v1/users"</span>)
+public class UserController {
+    private final UserService userService;
+
+    @GetMapping(<span class="s">"/{handle}"</span>)                                    <span class="c">// GET /api/v1/users/virat</span>
+    public UserProfile getProfile(@PathVariable String handle) {
+        return userService.getProfile(handle);
+    }
+
+    @PatchMapping(<span class="s">"/{handle}/bio"</span>)
+    public UserProfile updateBio(@PathVariable String handle, @RequestBody BioRequest request) {
+        return userService.updateBio(handle, request.bio());
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath</span>
+      <ol>
+        <li><b>@Cacheable</b> makes Spring build the key <code>users::virat</code> and check Redis BEFORE running your method. Copy found → the method body never runs. Not found → method runs, and Spring saves the result to Redis on the way out. You wrote zero cache code.</li>
+        <li><b>@CacheEvict</b> deletes <code>users::virat</code> the moment the bio changes — so nobody sees a stale bio for more than an instant.</li>
+        <li>The 10-minute TTL is the safety net: even if an eviction is ever missed, the copy heals itself within 10 minutes.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>Delete-on-change (@CacheEvict) beats updating the cache in place — deleting can never write a wrong value.</li>
+        <li>Keep the TTL even with perfect eviction. It forgives every future bug.</li>
+        <li>Watch your hit rate (hits ÷ total reads). Below ~80% means you're caching the wrong things or expiring too fast.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 3 PUBSUB -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-pubsub">
+    <div class="fh"><span class="fnum">3</span><h3>Redis Pub/Sub — the “₹500 received!” popup</h3></div>
+    <div class="storychip">📖 Feature 2 from the concepts tab</div>
+
+    <div class="problem">
+      <span class="lbl">1 · The problem</span>
+      <p>Suresh sends Ramesh ₹500. Ramesh is looking at his payment app and expects the popup <b>now</b>. But our backend runs on 20 servers — the server that processed Suresh's payment is NOT the server holding Ramesh's live connection. How does server 9 tell server 3 "push a popup to Ramesh"?</p>
+    </div>
+
+    <div class="solution">
+      <span class="lbl">2 · How Redis solves it</span>
+      <p>Redis becomes the shared loudspeaker between all 20 servers. The server that processed the payment PUBLISHES one small message to the channel <code>payments:user:ramesh</code>. Every server SUBSCRIBES to payment channels; the one actually holding Ramesh's connection hears the message and pushes the popup. Milliseconds, end to end.</p>
+    </div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind the code</span>
+      <p>Think of a school with 20 classrooms and one central loudspeaker (Redis). A teacher in classroom 9 needs to send a message to a student named "Ramesh" — but doesn't know which classroom Ramesh is sitting in. So the teacher speaks into the loudspeaker: "Message for Ramesh!" Every classroom hears it. The one classroom where Ramesh actually is delivers the message; the other 19 shrug and move on.</p>
+      <p><b>PaymentNotifier</b> is the teacher speaking into the loudspeaker (<code>convertAndSend</code>). <b>PaymentSubscriber</b> is every classroom listening. That's the whole trick — Redis just relays the shout instantly to every listener.</p>
+    </div>
+
+<pre><span class="c">// PaymentNotifier.java — the publishing side (any server can shout)</span>
+@Service
+public class PaymentNotifier {
+    private final StringRedisTemplate redis;
+
+    public void notifyMoneyReceived(String toUser, String fromUser, int amount) {
+        String message = <span class="s">"""
+            {"received":%d,"from":"%s"}"""</span>.formatted(amount, fromUser);
+        redis.convertAndSend(<span class="s">"payments:user:"</span> + toUser, message);   <span class="c">// PUBLISH — fire and move on</span>
+    }
+}</pre>
+
+<pre><span class="c">// PaymentSubscriber.java — the listening side (every server runs this)</span>
+@Configuration
+public class PaymentSubscriber {
+
+    @Bean
+    public RedisMessageListenerContainer listenerContainer(RedisConnectionFactory factory,
+                                                            PushService pushService) {
+        RedisMessageListenerContainer container = new RedisMessageListenerContainer();
+        container.setConnectionFactory(factory);
+
+        container.addMessageListener((message, pattern) -&gt; {
+            String channel = new String(message.getChannel());        <span class="c">// payments:user:ramesh</span>
+            String user = channel.substring(<span class="s">"payments:user:"</span>.length());
+            String payload = new String(message.getBody());
+            pushService.pushIfConnectedHere(user, payload);            <span class="c">// only the server holding his connection acts</span>
+        }, new PatternTopic(<span class="s">"payments:user:*"</span>));                       <span class="c">// SUBSCRIBE to all payment channels</span>
+
+        return container;
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath</span>
+      <ol>
+        <li><b>convertAndSend = PUBLISH.</b> Redis looks at its list of current listeners for that channel and forwards the message to each one instantly — then forgets the message. Nothing is stored.</li>
+        <li><b>The PatternTopic</b> <code>payments:user:*</code> means each server hears ALL users' payment messages and simply ignores the ones for users not connected to it. Simple, and plenty fast.</li>
+        <li>Ramesh's popup now appears in ~50 milliseconds — while Suresh is still holding his phone.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>Pub/Sub forgets. The transaction itself must already be safe in the database BEFORE you shout. Store first, shout second.</li>
+        <li>Use it for popups, live badges, "typing…" — never as the only record of anything.</li>
+        <li>One channel per user keeps the routing dead simple.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 4 SEARCH -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-search">
+    <div class="fh"><span class="fnum">4</span><h3>Redis Search — the Amazon search box</h3></div>
+    <div class="storychip">📖 Feature 3 from the concepts tab</div>
+
+    <div class="problem">
+      <span class="lbl">1 · The problem</span>
+      <p>A shopper types "iph" and expects "iPhone 15", "iPhone charger", "iPhone case" before the next letter. That is one search per keystroke, per shopper, needing a ~2ms answer. Text-matching on the main database per keystroke would crush it.</p>
+    </div>
+
+    <div class="solution">
+      <span class="lbl">2 · How Redis solves it</span>
+      <p>We store each product as a Redis Hash under <code>product:...</code>, and tell Redis Enterprise Cloud's search engine ONCE to index them. From then on, every product we save is automatically searchable, and each keystroke becomes one <code>FT.SEARCH</code> call answered from memory — bestsellers first.</p>
+    </div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind the code</span>
+      <p>Imagine a librarian who, every time a new book arrives, quietly adds an entry to the index at the back of a giant book — noting the title, author, and page. When a reader shouts "any book with 'iPhone' in it?", the librarian doesn't read every book — she flips to the index, finds "iPhone", and points to the right shelves in seconds.</p>
+      <p><b>SearchIndexInitializer</b> is us telling the librarian "watch the products shelf" — once, at app startup. From then on, every product we save (through <code>saveProduct</code>) automatically gets an index entry — we don't do anything extra. <b>ProductSearchService.suggest</b> is the reader shouting a prefix; Redis returns matching products, bestsellers first, in a couple of milliseconds.</p>
+    </div>
+
+<pre><span class="c">// SearchIndexInitializer.java — create the index once at startup (safe to re-run)</span>
+@Component
+public class SearchIndexInitializer {
+    private final StringRedisTemplate redis;
+
+    @PostConstruct
+    public void createIndex() {
+        try {
+            redis.execute((RedisCallback&lt;Object&gt;) conn -&gt; conn.execute(<span class="s">"FT.CREATE"</span>,
+                <span class="s">"idx:products"</span>.getBytes(), <span class="s">"ON"</span>.getBytes(), <span class="s">"HASH"</span>.getBytes(),
+                <span class="s">"PREFIX"</span>.getBytes(), <span class="s">"1"</span>.getBytes(), <span class="s">"product:"</span>.getBytes(),
+                <span class="s">"SCHEMA"</span>.getBytes(),
+                <span class="s">"name"</span>.getBytes(), <span class="s">"TEXT"</span>.getBytes(), <span class="s">"SORTABLE"</span>.getBytes(),
+                <span class="s">"price"</span>.getBytes(), <span class="s">"NUMERIC"</span>.getBytes(), <span class="s">"SORTABLE"</span>.getBytes(),
+                <span class="s">"sales"</span>.getBytes(), <span class="s">"NUMERIC"</span>.getBytes(), <span class="s">"SORTABLE"</span>.getBytes()));
+        } catch (Exception alreadyExists) { <span class="c">/* index exists — that's fine */</span> }
+    }
+}</pre>
+
+<pre><span class="c">// ProductSearchService.java</span>
+@Service
+public class ProductSearchService {
+    private final StringRedisTemplate redis;
+
+    <span class="c">// Save/update a product — the index picks it up automatically because of the "product:" prefix</span>
+    public void saveProduct(String id, String name, int price, int sales) {
+        redis.opsForHash().putAll(<span class="s">"product:"</span> + id,
+            Map.of(<span class="s">"name"</span>, name, <span class="s">"price"</span>, String.valueOf(price), <span class="s">"sales"</span>, String.valueOf(sales)));
+    }
+
+    <span class="c">// Called on every keystroke: FT.SEARCH idx:products "iph*" SORTBY sales DESC LIMIT 0 5</span>
+    public List&lt;ProductSuggestion&gt; suggest(String typed, int max) {
+        Object raw = redis.execute((RedisCallback&lt;Object&gt;) conn -&gt; conn.execute(<span class="s">"FT.SEARCH"</span>,
+            <span class="s">"idx:products"</span>.getBytes(),
+            (typed + <span class="s">"*"</span>).getBytes(),
+            <span class="s">"SORTBY"</span>.getBytes(), <span class="s">"sales"</span>.getBytes(), <span class="s">"DESC"</span>.getBytes(),
+            <span class="s">"LIMIT"</span>.getBytes(), <span class="s">"0"</span>.getBytes(), String.valueOf(max).getBytes()));
+        return SearchResultParser.toSuggestions(raw);
+    }
+}</pre>
+
+<pre><span class="c">// SearchController.java — the REST API</span>
+@RestController
+@RequestMapping(<span class="s">"/api/v1/search"</span>)
+public class SearchController {
+    private final ProductSearchService searchService;
+
+    @GetMapping(<span class="s">"/products"</span>)                                  <span class="c">// GET /api/v1/search/products?q=iph</span>
+    public List&lt;ProductSuggestion&gt; products(@RequestParam String q,
+                                             @RequestParam(defaultValue = <span class="s">"5"</span>) int max) {
+        return searchService.suggest(q, max);
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath</span>
+      <ol>
+        <li><b>The index watches the prefix</b> <code>product:</code>. Every hash we write under that prefix is indexed automatically — there is no "sync the index" job to build or forget.</li>
+        <li><b>FT.SEARCH "iph*"</b> uses the back-of-the-book index to jump straight to matching products — it never scans your data. ~2ms even with millions of products.</li>
+        <li><b>SORTBY sales DESC</b> puts bestsellers first, which is what shoppers actually want to see.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>Debounce on the client: search after a ~150ms typing pause, not literally every key press.</li>
+        <li>The index is a rebuildable copy — the main database remains the source of truth for products.</li>
+        <li>LIMIT your results server-side (5–8 suggestions) — nobody reads suggestion #40.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 5 GEO -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-geo">
+    <div class="fh"><span class="fnum">5</span><h3>Redis Geospatial — “your delivery partner is 1.2 km away”</h3></div>
+    <div class="storychip">📖 Feature 4 from the concepts tab</div>
+
+    <div class="problem">
+      <span class="lbl">1 · The problem</span>
+      <p>Thousands of delivery partners move around the city, sending their position every few seconds. Every customer opening the tracking screen asks: "which partners are near MY address, right now?" Measuring the distance to every partner, per customer, per refresh, is far too slow.</p>
+    </div>
+
+    <div class="solution">
+      <span class="lbl">2 · How Redis solves it</span>
+      <p>Partners' apps update their position with one command (which overwrites in place — perfect for moving targets). The tracking screen asks "who is within 3 km of this point?" with one command — answered in about a millisecond, nearest first, distances included.</p>
+    </div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind the code</span>
+      <p>Picture a giant map of Pune pinned to a wall. Every delivery partner has a little magnetic pin with their name on it. Their app tells us "I'm at this corner now" — we walk over and move their pin to that spot. When a customer opens the tracking screen, we simply put a finger on the customer's address and read out the names of the nearest pins — Raju is 1.2 km, Salim is 2.4 km.</p>
+      <p><b>updateLocation</b> moves the pin (GEOADD). <b>findNearby</b> reads the nearest pins to a point (GEOSEARCH). Redis does the "which pins are near this finger?" math instantly — no distance-calculation loop in your Java code.</p>
+    </div>
+
+<pre><span class="c">// DeliveryLocationService.java</span>
+@Service
+public class DeliveryLocationService {
+    private final StringRedisTemplate redis;
+    private static final String KEY = <span class="s">"partners:pune"</span>;    <span class="c">// one key per city</span>
+
+    <span class="c">// Called by the partner's app every few seconds</span>
+    public void updateLocation(String partnerId, double longitude, double latitude) {
+        redis.opsForGeo().add(KEY, new Point(longitude, latitude), partnerId);   <span class="c">// GEOADD — overwrite in place</span>
+    }
+
+    <span class="c">// Called by the customer's tracking screen</span>
+    public List&lt;NearbyPartner&gt; findNearby(double longitude, double latitude, double radiusKm, int max) {
+        GeoResults&lt;RedisGeoCommands.GeoLocation&lt;String&gt;&gt; results = redis.opsForGeo().search(
+            KEY,
+            GeoReference.fromCoordinate(longitude, latitude),      <span class="c">// centered on the customer's address</span>
+            new Distance(radiusKm, Metrics.KILOMETERS),
+            RedisGeoCommands.GeoSearchCommandArgs.newGeoSearchArgs()
+                .includeDistance().sortAscending().limit(max));     <span class="c">// nearest first</span>
+
+        return results.getContent().stream()
+            .map(r -&gt; new NearbyPartner(r.getContent().getName(),
+                                         r.getDistance().getValue()))   <span class="c">// km away</span>
+            .toList();
+    }
+}</pre>
+
+<pre><span class="c">// DeliveryController.java — the REST APIs</span>
+@RestController
+@RequestMapping(<span class="s">"/api/v1/delivery"</span>)
+public class DeliveryController {
+    private final DeliveryLocationService locationService;
+
+    @PutMapping(<span class="s">"/partners/{partnerId}/location"</span>)              <span class="c">// partner app calls this every few seconds</span>
+    public ResponseEntity&lt;Void&gt; updateLocation(@PathVariable String partnerId,
+                                                @RequestBody LocationRequest request) {
+        locationService.updateLocation(partnerId, request.longitude(), request.latitude());
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping(<span class="s">"/partners/nearby"</span>)     <span class="c">// GET /api/v1/delivery/partners/nearby?lon=73.856&lat=18.520&radiusKm=3</span>
+    public List&lt;NearbyPartner&gt; nearby(@RequestParam double lon, @RequestParam double lat,
+                                       @RequestParam(defaultValue = <span class="s">"3"</span>) double radiusKm) {
+        return locationService.findNearby(lon, lat, radiusKm, 10);
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath</span>
+      <ol>
+        <li><b>GEOADD turns lat+lon into one clever number</b> where nearby places get nearby numbers, and stores partners sorted by it. "Near me" becomes "look at my number's neighbors" — a lookup, not a city-wide calculation.</li>
+        <li><b>Updates are just GEOADD again</b> — the partner's number changes, their position in the sorted structure moves. No delete-and-re-add.</li>
+        <li><b>includeDistance + sortAscending</b> gives the screen exactly what it displays: "Raju — 1.2 km", nearest first.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>One geo key per city/zone keeps searches small and fast.</li>
+        <li>Sweep out partners whose position hasn't updated recently (they went offline) — stale dots on a map break trust.</li>
+        <li>Location is personal data: collect it only with consent and only while needed.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 6 DATA STRUCTURES -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-structures">
+    <div class="fh"><span class="fnum">6</span><h3>Data Structures — five small features, five shapes</h3></div>
+    <div class="storychip">📖 Feature 5 from the concepts tab — all five, with code</div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind this whole section</span>
+      <p>We're going to build five tiny features — one for each data shape Redis offers. Each one is a real problem a real app faces every day, solved in about 15 lines of Java. Read the story, then the code — you'll see the shape click into place naturally.</p>
+    </div>
+
+    <h3 style="margin-top:8px">String → YouTube-style view counter</h3>
+    <div class="problem"><span class="lbl">1 · The problem</span><p>8,000 views per second on a viral video. "Read the count, add 1, write it back" from 20 servers loses views when two servers read the same number at the same moment.</p></div>
+    <div class="solution"><span class="lbl">2 · The fix</span><p><code>increment()</code> — Redis adds 1 as one unbreakable step. No reads, no gaps, no lost views.</p></div>
+<pre>@Service
+public class ViewCounterService {
+    private final StringRedisTemplate redis;
+
+    public long addView(String videoId) {
+        return redis.opsForValue().increment(<span class="s">"video:"</span> + videoId + <span class="s">":views"</span>);   <span class="c">// INCR — atomic +1</span>
+    }
+    public long getViews(String videoId) {
+        String v = redis.opsForValue().get(<span class="s">"video:"</span> + videoId + <span class="s">":views"</span>);
+        return v == null ? 0 : Long.parseLong(v);
+    }
+}
+
+<span class="c">// REST: POST /api/v1/videos/{id}/view   → returns the new count</span></pre>
+
+    <h3>Hash → payment-app wallet</h3>
+    <div class="problem"><span class="lbl">1 · The problem</span><p>A wallet has balance, currency, status. As one JSON blob, changing just the balance means rewriting everything — wasteful and racy.</p></div>
+    <div class="solution"><span class="lbl">2 · The fix</span><p>A Hash = one key with labeled compartments. Touch one field; leave the rest alone. <code>HINCRBY</code> changes the balance atomically.</p></div>
+<pre>@Service
+public class WalletService {
+    private final StringRedisTemplate redis;
+
+    public void deduct(String user, int amount) {
+        redis.opsForHash().increment(<span class="s">"wallet:"</span> + user, <span class="s">"balance"</span>, -amount);   <span class="c">// HINCRBY — one field, atomic</span>
+    }
+    public String getBalance(String user) {
+        Object b = redis.opsForHash().get(<span class="s">"wallet:"</span> + user, <span class="s">"balance"</span>);       <span class="c">// HGET — one field</span>
+        return b == null ? <span class="s">"0"</span> : b.toString();
+    }
+}
+
+<span class="c">// REST: GET /api/v1/wallet/{user}/balance</span></pre>
+
+    <h3>List → Facebook-style notifications</h3>
+    <div class="problem"><span class="lbl">1 · The problem</span><p>Notifications: newest on top, 20 per page, scroll for more. Rebuilding this list from the database on every open is repeated, pointless work.</p></div>
+    <div class="solution"><span class="lbl">2 · The fix</span><p>A List: push new items to the front, read pages by range, trim the tail so it never grows forever.</p></div>
+<pre>@Service
+public class NotificationService {
+    private final StringRedisTemplate redis;
+
+    public void add(String user, String notificationJson) {
+        String key = <span class="s">"notifications:"</span> + user;
+        redis.opsForList().leftPush(key, notificationJson);   <span class="c">// LPUSH — newest at the front</span>
+        redis.opsForList().trim(key, 0, 499);                  <span class="c">// LTRIM — keep newest 500</span>
+    }
+    public List&lt;String&gt; page(String user, int page, int size) {
+        long start = (long) page * size;
+        return redis.opsForList().range(<span class="s">"notifications:"</span> + user, start, start + size - 1);  <span class="c">// LRANGE</span>
+    }
+}
+
+<span class="c">// REST: GET /api/v1/notifications?user=ramesh&page=0</span></pre>
+
+    <h3>Set → Instagram likes</h3>
+    <div class="problem"><span class="lbl">1 · The problem</span><p>Fast double-taps on a laggy network count one person as two likes. And the app must know instantly whether YOUR heart should be red on each post.</p></div>
+    <div class="solution"><span class="lbl">2 · The fix</span><p>A Set holds unique members — duplicates are impossible by definition. The add command itself answers "new like" (1) or "already liked" (0); the count is the set's size; the red heart is one membership check.</p></div>
+<pre>@Service
+public class LikeService {
+    private final StringRedisTemplate redis;
+
+    public boolean like(String postId, String user) {
+        Long added = redis.opsForSet().add(<span class="s">"post:"</span> + postId + <span class="s">":likers"</span>, user);   <span class="c">// SADD</span>
+        return added != null && added == 1;      <span class="c">// double-tap-proof: second tap returns 0</span>
+    }
+    public long count(String postId) {
+        Long c = redis.opsForSet().size(<span class="s">"post:"</span> + postId + <span class="s">":likers"</span>);            <span class="c">// SCARD</span>
+        return c == null ? 0 : c;
+    }
+    public boolean hasLiked(String postId, String user) {                            <span class="c">// SISMEMBER</span>
+        return Boolean.TRUE.equals(redis.opsForSet().isMember(<span class="s">"post:"</span> + postId + <span class="s">":likers"</span>, user));
+    }
+}
+
+<span class="c">// REST: POST /api/v1/posts/{id}/like?user=ramesh   |   GET /api/v1/posts/{id}/likes/count</span></pre>
+
+    <h3>Sorted Set → stock-trading “Top Gainers”</h3>
+    <div class="problem"><span class="lbl">1 · The problem</span><p>Top Gainers ranked by today's % change, updating every second, watched by every user. Re-sorting thousands of stocks per second in a database is hopeless.</p></div>
+    <div class="solution"><span class="lbl">2 · The fix</span><p>A Sorted Set keeps members ordered by score AT ALL TIMES. Update a stock's % change and it slides to its new position instantly. "Top 10" is a read, never a sort.</p></div>
+<pre>@Service
+public class GainersService {
+    private final StringRedisTemplate redis;
+    private static final String KEY = <span class="s">"gainers:today"</span>;
+
+    public void updateChange(String symbol, double percentChange) {
+        redis.opsForZSet().add(KEY, symbol, percentChange);        <span class="c">// ZADD — score updated, order self-adjusts</span>
+    }
+
+    public List&lt;Gainer&gt; top(int n) {
+        Set&lt;ZSetOperations.TypedTuple&lt;String&gt;&gt; top =
+            redis.opsForZSet().reverseRangeWithScores(KEY, 0, n - 1);   <span class="c">// ZREVRANGE — top N, already sorted</span>
+        List&lt;Gainer&gt; out = new ArrayList&lt;&gt;();
+        int rank = 1;
+        for (var t : top) out.add(new Gainer(rank++, t.getValue(), t.getScore()));
+        return out;
+    }
+
+    public Long rankOf(String symbol) {
+        Long r = redis.opsForZSet().reverseRank(KEY, symbol);       <span class="c">// ZREVRANK — instant rank lookup</span>
+        return r == null ? null : r + 1;
+    }
+}
+
+<span class="c">// REST: GET /api/v1/stocks/gainers/top   |   GET /api/v1/stocks/{symbol}/rank</span></pre>
+
+    <div class="walk">
+      <span class="lbl">What is happening underneath (all five)</span>
+      <ol>
+        <li><b>Every command above is atomic</b> — Redis's one-at-a-time cashier means INCR, HINCRBY, SADD, and ZADD can never half-happen or collide. All the race conditions you'd have to code around elsewhere simply don't exist here.</li>
+        <li><b>Each shape answers its question in one step:</b> the count IS the set's size; the top 10 IS the first 10; the page IS the range. No loops, no sorting, no assembly in Java.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>Match the shape to the question: unique? → Set. Ranked? → Sorted Set. Newest-first pages? → List. One field of an object? → Hash. A single value or counter? → String.</li>
+        <li>Cap everything that grows: LTRIM lists, expire finished days' sorted sets, archive old data to the database.</li>
+        <li>Name keys like folders (<code>post:9001:likers</code>) — six months later, anyone can read your Redis like a map.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 7 ATOMIC COUNTER — THE FLASH SALE -->
+  <!-- ============================================================ -->
+  <div class="feat" id="sb-atomic">
+    <div class="fh"><span class="fnum">7</span><h3>Atomic Counter — the Flash Sale that sells exactly 100</h3></div>
+    <div class="storychip">📖 Feature 6 from the concepts tab — the concurrency showpiece</div>
+
+    <div class="problem">
+      <span class="lbl">1 · The problem</span>
+      <p>Flipkart is running a flash sale: <b>100 phones, ₹9,999 each, live at 12:00 sharp</b>. At exactly 12:00:00, our servers receive <b>50,000 "BUY" clicks in a single second</b>. Our backend has 50 servers behind a load balancer; each server handles many requests in parallel using Java virtual threads. The rule is simple and unforgiving: sell exactly 100. Not 99. Not 101. Exactly 100.</p>
+      <p>Our first version used <code>AtomicInteger</code> inside each server to count down. Result: <b>we sold 4,700 phones we didn't have.</b> Why? Because <code>AtomicInteger</code> is only atomic INSIDE one JVM. All 50 servers had their own separate counter — each one happily sold "the last 100 phones."</p>
+    </div>
+
+    <div class="solution">
+      <span class="lbl">2 · How Redis solves it</span>
+      <p>We move the counter OUT of every server's memory and INTO Redis. Now all 50 servers share ONE counter. Each buy click sends one <code>DECR</code> command; Redis executes them one at a time (single cashier — remember Section 4), so no two DECRs can ever collide. The command returns the new value — so we know immediately whether the sale succeeded or the shelves are empty. If the counter went negative (we were too late), we <code>INCR</code> it back and reject the sale. Simple, exact, correct at any traffic level.</p>
+    </div>
+
+    <div class="behind">
+      <span class="lbl">📖 The story behind the code</span>
+      <p>Think of the flash sale as a big glass jar with exactly 100 marbles. The jar sits in one place (Redis). All 50 servers reach in through a small opening — but the opening is narrow, so only one hand fits at a time. Each customer says "give me a marble," a hand grabs one, the jar's counter goes down by 1, and the customer walks away with the marble. When the jar is empty, the next hand comes back with nothing — Redis returns -1, and we tell the customer "sold out, better luck next time."</p>
+      <p>Look for these pieces in the code below:</p>
+      <ul style="margin-left:20px;font-size:15.5px">
+        <li><b>startSale</b> — puts the 100 marbles in the jar.</li>
+        <li><b>attemptPurchase</b> — one hand reaches in (DECR). If it got a marble (result ≥ 0), the sale succeeds. If it got -1 (empty), we put the imaginary marble back (INCR) and reject the sale.</li>
+        <li><b>ExecutorService with virtual threads</b> — this is Java 25's superpower: we can launch 50,000 concurrent buy attempts in one JVM cheaply. It also proves the point: even with that much concurrency slamming Redis, the count comes out exactly right.</li>
+      </ul>
+    </div>
+
+<pre><span class="c">// FlashSaleService.java — the whole flash sale is ~15 lines</span>
+@Service
+public class FlashSaleService {
+
+    private final StringRedisTemplate redis;
+    private static final String STOCK_KEY = <span class="s">"stock:flashsale:iphone15"</span>;
+
+    public FlashSaleService(StringRedisTemplate redis) {
+        this.redis = redis;
+    }
+
+    <span class="c">// Called once by the admin before the sale opens</span>
+    public void startSale(int units) {
+        redis.opsForValue().set(STOCK_KEY, String.valueOf(units));
+        redis.expire(STOCK_KEY, Duration.ofHours(2));       <span class="c">// self-cleanup after 2 hours</span>
+    }
+
+    <span class="c">// Called by every "BUY" click. Returns a record with the outcome.</span>
+    public PurchaseResult attemptPurchase(String userId) {
+        Long remaining = redis.opsForValue().decrement(STOCK_KEY);   <span class="c">// DECR — atomic across ALL 50 servers</span>
+
+        if (remaining == null) {                    <span class="c">// sale hasn't started or already expired</span>
+            return new PurchaseResult(false, <span class="s">"Sale not active"</span>, -1);
+        }
+        if (remaining &lt; 0) {                        <span class="c">// too late — someone else got the last one</span>
+            redis.opsForValue().increment(STOCK_KEY);   <span class="c">// put the "imaginary" marble back</span>
+            return new PurchaseResult(false, <span class="s">"Sold out"</span>, 0);
+        }
+        return new PurchaseResult(true, <span class="s">"Reserved for "</span> + userId, remaining.intValue());
+    }
+
+    public int remaining() {
+        String v = redis.opsForValue().get(STOCK_KEY);
+        return v == null ? 0 : Math.max(0, Integer.parseInt(v));
+    }
+}
+
+<span class="c">// Java 25 record — the neat return type for the outcome</span>
+public record PurchaseResult(boolean success, String message, int remaining) {}</pre>
+
+<pre><span class="c">// FlashSaleController.java — the REST API</span>
+@RestController
+@RequestMapping(<span class="s">"/api/v1/flashsale"</span>)
+public class FlashSaleController {
+
+    private final FlashSaleService flashSaleService;
+
+    public FlashSaleController(FlashSaleService flashSaleService) {
+        this.flashSaleService = flashSaleService;
+    }
+
+    @PostMapping(<span class="s">"/start"</span>)                          <span class="c">// admin: POST /api/v1/flashsale/start?units=100</span>
+    public ResponseEntity&lt;String&gt; start(@RequestParam int units) {
+        flashSaleService.startSale(units);
+        return ResponseEntity.ok(<span class="s">"Sale started with "</span> + units + <span class="s">" units"</span>);
+    }
+
+    @PostMapping(<span class="s">"/buy"</span>)                            <span class="c">// customer: POST /api/v1/flashsale/buy?userId=ramesh</span>
+    public ResponseEntity&lt;PurchaseResult&gt; buy(@RequestParam String userId) {
+        PurchaseResult result = flashSaleService.attemptPurchase(userId);
+        return result.success()
+            ? ResponseEntity.ok(result)
+            : ResponseEntity.status(HttpStatus.CONFLICT).body(result);   <span class="c">// 409 = "sold out"</span>
+    }
+
+    @GetMapping(<span class="s">"/remaining"</span>)                       <span class="c">// GET /api/v1/flashsale/remaining</span>
+    public int remaining() {
+        return flashSaleService.remaining();
+    }
+}</pre>
+
+<pre><span class="c">// FlashSaleConcurrencyTest.java — proof it works under 50,000 concurrent clicks</span>
+<span class="c">// This uses Java 25's virtual threads to simulate 50,000 people clicking at the same instant.</span>
+@SpringBootTest
+class FlashSaleConcurrencyTest {
+
+    @Autowired FlashSaleService flashSaleService;
+
+    @Test
+    void sellsExactly100PhonesEvenWith50000ConcurrentClicks() throws Exception {
+        flashSaleService.startSale(100);
+        AtomicInteger successes = new AtomicInteger();
+        AtomicInteger failures  = new AtomicInteger();
+
+        <span class="c">// Java 25 virtual threads — 50,000 of them, cheap to create</span>
+        try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+            List&lt;Future&lt;?&gt;&gt; futures = new ArrayList&lt;&gt;();
+            for (int i = 0; i &lt; 50_000; i++) {
+                final int userNum = i;
+                futures.add(executor.submit(() -&gt; {
+                    var result = flashSaleService.attemptPurchase(<span class="s">"user"</span> + userNum);
+                    (result.success() ? successes : failures).incrementAndGet();
+                }));
+            }
+            for (Future&lt;?&gt; f : futures) f.get();       <span class="c">// wait for everyone</span>
+        }
+
+        assertEquals(100, successes.get());              <span class="c">// exactly 100 phones sold ✓</span>
+        assertEquals(49_900, failures.get());            <span class="c">// exactly 49,900 got "sold out" ✓</span>
+        assertEquals(0, flashSaleService.remaining());   <span class="c">// counter safely at 0 ✓</span>
+    }
+}</pre>
+
+    <div class="walk">
+      <span class="lbl">🔍 What is happening underneath</span>
+      <ol>
+        <li><b>DECR is one atomic step in Redis's single cashier queue.</b> Even if 50,000 DECR commands arrive in the same millisecond, they line up and execute one after the other — no two can read the same "current value." Every DECR gets a unique return value.</li>
+        <li><b>The return value is the whole decision:</b> ≥ 0 means "you got a phone." −1, −2, −3, ... mean "you were the 101st, 102nd, 103rd person — sold out." We compensate the negative values with INCR so the counter settles at exactly 0 when the dust clears.</li>
+        <li><b>Java 25 virtual threads let the test simulate real load</b> — 50,000 concurrent HTTP-like calls in one JVM without breaking a sweat. If AtomicInteger was used instead, the test would still pass on ONE server — and quietly explode when deployed to 50 servers, because each JVM has its own AtomicInteger. Redis is one shared truth for all of them.</li>
+      </ol>
+    </div>
+
+    <div class="best">
+      <span class="lbl">Best practices</span>
+      <ul>
+        <li>For anything shared across servers — flash-sale stock, ticket seats, API quotas, rate limits — use Redis atomic commands. Never rely on <code>AtomicInteger</code> or <code>synchronized</code>; those only work inside one JVM.</li>
+        <li>When over-decrementing is possible, always check the return value and compensate with <code>INCR</code> — it's one extra command and it keeps the counter correct.</li>
+        <li>Give short-lived counters (flash sales, rate-limit windows) a TTL so they clean themselves up.</li>
+        <li>For counters where the money is on the line (real payments, real inventory), also write a durable record to the main database on success — the Redis counter is the fast referee, the database is the ledger.</li>
+      </ul>
+    </div>
+  </div>
+
+</div></section>
+
+</div> <!-- /panelSpringboot -->
+
+<footer><div class="wrap">
+  Sources: Redis documentation · Redis Enterprise Cloud docs · Spring Data Redis reference. All examples simplified for learning.
+</div></footer>
+
+<script>
+function showTab(tab){
+  const pc = document.getElementById('panelConcepts');
+  const ps = document.getElementById('panelSpringboot');
+  const bc = document.getElementById('btnConcepts');
+  const bs = document.getElementById('btnSpring');
+  if (tab === 'concepts'){
+    pc.classList.add('active'); ps.classList.remove('active');
+    bc.classList.add('active'); bs.classList.remove('active');
+  } else {
+    ps.classList.add('active'); pc.classList.remove('active');
+    bs.classList.add('active'); bc.classList.remove('active');
+  }
+  window.scrollTo({top:0, behavior:'instant'});
+}
+</script>
+</body>
+</html>
